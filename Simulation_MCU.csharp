@@ -1,0 +1,268 @@
+// ===================================================================
+// Sistem Kontrol Lingkungan Otomatis - C# untuk Mikrocontroller
+// Mochamad Rafly Firmansyah / 2042241130
+// ===================================================================
+
+using System;
+using System.Threading;
+
+namespace EnvironmentalControlSystem
+{
+    // Enum untuk FSM States
+    public enum SystemState
+    {
+        S0_IDLE = 0,        // 000 - All sensors normal
+        S1_SINGLE = 1,      // 001 - 1 sensor abnormal
+        S2_MULTIPLE = 2,    // 010 - 2-3 sensors abnormal
+        S3_CRITICAL = 3,    // 011 - 4-5 sensors abnormal
+        S4_EMERGENCY = 4    // 100 - All sensors abnormal
+    }
+
+    // Struktur untuk sensor inputs
+    public struct SensorInputs
+    {
+        public bool S1_Temperature;  // 1 = normal, 0 = abnormal
+        public bool S2_Humidity;
+        public bool S3_VOC;
+        public bool S4_Dust;
+        public bool S5_Airflow;
+        public bool S6_Light;
+
+        public int CountAbnormal()
+        {
+            int count = 0;
+            if (!S1_Temperature) count++;
+            if (!S2_Humidity) count++;
+            if (!S3_VOC) count++;
+            if (!S4_Dust) count++;
+            if (!S5_Airflow) count++;
+            if (!S6_Light) count++;
+            return count;
+        }
+    }
+
+    // Struktur untuk actuator outputs
+    public struct ActuatorOutputs
+    {
+        public bool A1_ExhaustFan;
+        public bool A2_InlineDuctFan;  // Always 0
+        public bool A3_Dehumidifier;
+        public bool A4_InlineDuctFan2;
+        public bool A5_CoolingSystem;
+        public bool A6_LEDSystem;
+
+        public void Reset()
+        {
+            A1_ExhaustFan = false;
+            A2_InlineDuctFan = false;
+            A3_Dehumidifier = false;
+            A4_InlineDuctFan2 = false;
+            A5_CoolingSystem = false;
+            A6_LEDSystem = false;
+        }
+
+        public override string ToString()
+        {
+            return $"A1:{(A1_ExhaustFan ? 1 : 0)} A2:{(A2_InlineDuctFan ? 1 : 0)} " +
+                   $"A3:{(A3_Dehumidifier ? 1 : 0)} A4:{(A4_InlineDuctFan2 ? 1 : 0)} " +
+                   $"A5:{(A5_CoolingSystem ? 1 : 0)} A6:{(A6_LEDSystem ? 1 : 0)}";
+        }
+    }
+
+    // Main FSM Controller Class
+    public class EnvironmentalControlFSM
+    {
+        private SystemState currentState;
+        private SensorInputs sensors;
+        private ActuatorOutputs actuators;
+
+        public SystemState CurrentState => currentState;
+        public ActuatorOutputs Actuators => actuators;
+
+        public EnvironmentalControlFSM()
+        {
+            Reset();
+        }
+
+        // Reset FSM to initial state
+        public void Reset()
+        {
+            currentState = SystemState.S0_IDLE;
+            actuators.Reset();
+        }
+
+        // Update sensor readings
+        public void UpdateSensors(SensorInputs newSensors)
+        {
+            sensors = newSensors;
+        }
+
+        // State transition logic
+        private SystemState DetermineNextState()
+        {
+            int abnormalCount = sensors.CountAbnormal();
+
+            switch (abnormalCount)
+            {
+                case 0:
+                    return SystemState.S0_IDLE;
+                case 1:
+                    return SystemState.S1_SINGLE;
+                case 2:
+                case 3:
+                    return SystemState.S2_MULTIPLE;
+                case 4:
+                case 5:
+                    return SystemState.S3_CRITICAL;
+                case 6:
+                    return SystemState.S4_EMERGENCY;
+                default:
+                    return SystemState.S0_IDLE;
+            }
+        }
+
+        // Output logic based on current state (Moore Machine)
+        private void UpdateActuators()
+        {
+            actuators.Reset();  // Start with all OFF
+
+            switch (currentState)
+            {
+                case SystemState.S0_IDLE:
+                    // All actuators OFF
+                    break;
+
+                case SystemState.S1_SINGLE:
+                    // Activate specific actuator based on abnormal sensor
+                    if (!sensors.S1_Temperature) actuators.A5_CoolingSystem = true;
+                    if (!sensors.S2_Humidity) actuators.A3_Dehumidifier = true;
+                    if (!sensors.S3_VOC) actuators.A1_ExhaustFan = true;
+                    if (!sensors.S4_Dust) actuators.A1_ExhaustFan = true;
+                    if (!sensors.S5_Airflow) actuators.A4_InlineDuctFan2 = true;
+                    if (!sensors.S6_Light) actuators.A6_LEDSystem = true;
+                    break;
+
+                case SystemState.S2_MULTIPLE:
+                case SystemState.S3_CRITICAL:
+                    // Multiple actuators active
+                    if (!sensors.S1_Temperature) actuators.A5_CoolingSystem = true;
+                    if (!sensors.S2_Humidity) actuators.A3_Dehumidifier = true;
+                    if (!sensors.S3_VOC) actuators.A1_ExhaustFan = true;
+                    if (!sensors.S4_Dust) actuators.A1_ExhaustFan = true;
+                    if (!sensors.S5_Airflow) actuators.A4_InlineDuctFan2 = true;
+                    if (!sensors.S6_Light) actuators.A6_LEDSystem = true;
+                    break;
+
+                case SystemState.S4_EMERGENCY:
+                    // All protection actuators ON
+                    actuators.A1_ExhaustFan = true;
+                    actuators.A3_Dehumidifier = true;
+                    actuators.A4_InlineDuctFan2 = true;
+                    actuators.A5_CoolingSystem = true;
+                    actuators.A6_LEDSystem = true;
+                    actuators.A2_InlineDuctFan = false;  // Always OFF
+                    break;
+            }
+        }
+
+        // Execute one FSM cycle
+        public void Execute()
+        {
+            // State transition
+            currentState = DetermineNextState();
+
+            // Update outputs based on new state
+            UpdateActuators();
+        }
+
+        // Get status string
+        public string GetStatus()
+        {
+            return $"State: {currentState} | Sensors: T:{(sensors.S1_Temperature ? 1 : 0)} " +
+                   $"H:{(sensors.S2_Humidity ? 1 : 0)} V:{(sensors.S3_VOC ? 1 : 0)} " +
+                   $"D:{(sensors.S4_Dust ? 1 : 0)} A:{(sensors.S5_Airflow ? 1 : 0)} " +
+                   $"L:{(sensors.S6_Light ? 1 : 0)} | {actuators}";
+        }
+    }
+
+    // ===================================================================
+    // PROGRAM SIMULASI
+    // ===================================================================
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("========================================================");
+            Console.WriteLine("Sistem Kontrol Lingkungan Otomatis - Simulasi C#");
+            Console.WriteLine("Mochamad Rafly Firmansyah / 2042241130");
+            Console.WriteLine("========================================================\n");
+
+            EnvironmentalControlFSM fsm = new EnvironmentalControlFSM();
+            SensorInputs sensors = new SensorInputs();
+
+            // Test Case 1: All sensors normal (IDLE)
+            Console.WriteLine("TEST 1: All Sensors Normal (IDLE State)");
+            sensors.S1_Temperature = true;
+            sensors.S2_Humidity = true;
+            sensors.S3_VOC = true;
+            sensors.S4_Dust = true;
+            sensors.S5_Airflow = true;
+            sensors.S6_Light = true;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+            Thread.Sleep(1000);
+
+            // Test Case 2: Single sensor abnormal (Temperature)
+            Console.WriteLine("\nTEST 2: Temperature Abnormal (Single Alert)");
+            sensors.S1_Temperature = false;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+            Thread.Sleep(1000);
+
+            // Test Case 3: Multiple sensors abnormal
+            Console.WriteLine("\nTEST 3: Temperature + Humidity Abnormal (Multiple)");
+            sensors.S1_Temperature = false;
+            sensors.S2_Humidity = false;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+            Thread.Sleep(1000);
+
+            // Test Case 4: Critical condition
+            Console.WriteLine("\nTEST 4: 4 Sensors Abnormal (Critical)");
+            sensors.S3_VOC = false;
+            sensors.S4_Dust = false;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+            Thread.Sleep(1000);
+
+            // Test Case 5: Emergency mode
+            Console.WriteLine("\nTEST 5: All Sensors Abnormal (Emergency)");
+            sensors.S5_Airflow = false;
+            sensors.S6_Light = false;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+            Thread.Sleep(1000);
+
+            // Test Case 6: Recovery to normal
+            Console.WriteLine("\nTEST 6: Recovery to Normal");
+            sensors.S1_Temperature = true;
+            sensors.S2_Humidity = true;
+            sensors.S3_VOC = true;
+            sensors.S4_Dust = true;
+            sensors.S5_Airflow = true;
+            sensors.S6_Light = true;
+            fsm.UpdateSensors(sensors);
+            fsm.Execute();
+            Console.WriteLine(fsm.GetStatus());
+
+            Console.WriteLine("\n========================================================");
+            Console.WriteLine("Simulasi Selesai. Press any key to exit...");
+            Console.ReadKey();
+        }
+    }
+}
