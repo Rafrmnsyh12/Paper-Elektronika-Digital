@@ -1,0 +1,212 @@
+$date
+	Mon Dec 01 18:26:29 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_environmental_control $end
+$var wire 3 ! current_state [2:0] $end
+$var wire 1 " A6 $end
+$var wire 1 # A5 $end
+$var wire 1 $ A4 $end
+$var wire 1 % A3 $end
+$var wire 1 & A2 $end
+$var wire 1 ' A1 $end
+$var reg 1 ( S1 $end
+$var reg 1 ) S2 $end
+$var reg 1 * S3 $end
+$var reg 1 + S4 $end
+$var reg 1 , S5 $end
+$var reg 1 - S6 $end
+$var reg 1 . clk $end
+$var reg 1 / reset $end
+$scope module uut $end
+$var wire 1 ( S1 $end
+$var wire 1 ) S2 $end
+$var wire 1 * S3 $end
+$var wire 1 + S4 $end
+$var wire 1 , S5 $end
+$var wire 1 - S6 $end
+$var wire 1 . clk $end
+$var wire 1 / reset $end
+$var parameter 3 0 S0_IDLE $end
+$var parameter 3 1 S1_SINGLE $end
+$var parameter 3 2 S2_MULTIPLE $end
+$var parameter 3 3 S3_CRITICAL $end
+$var parameter 3 4 S4_EMERGENCY $end
+$var reg 1 ' A1 $end
+$var reg 1 & A2 $end
+$var reg 1 % A3 $end
+$var reg 1 $ A4 $end
+$var reg 1 # A5 $end
+$var reg 1 " A6 $end
+$var reg 3 5 abnormal_count [2:0] $end
+$var reg 3 6 current_state [2:0] $end
+$var reg 3 7 next_state [2:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100 4
+b11 3
+b10 2
+b1 1
+b0 0
+$end
+#0
+$dumpvars
+b0 7
+b0 6
+b0 5
+1/
+0.
+1-
+1,
+1+
+1*
+1)
+1(
+0'
+0&
+0%
+0$
+0#
+0"
+b0 !
+$end
+#10
+1.
+#20
+0.
+0/
+#30
+1.
+#40
+b1 7
+b1 5
+0.
+0(
+#50
+1#
+b1 !
+b1 6
+1.
+#60
+0.
+#70
+1.
+#80
+b10 7
+1%
+1#
+b10 5
+0.
+0)
+#90
+1#
+1%
+b10 !
+b10 6
+1.
+#100
+0.
+#110
+1.
+#120
+b11 7
+1'
+1#
+1%
+b100 5
+0.
+0+
+0*
+#130
+1#
+1%
+1'
+b11 !
+b11 6
+1.
+#140
+0.
+#150
+1.
+#160
+b100 7
+1"
+1$
+1#
+1%
+1'
+b110 5
+0.
+0-
+0,
+#170
+1"
+1#
+1$
+1%
+1'
+b100 !
+b100 6
+1.
+#180
+0.
+#190
+1.
+#200
+b0 7
+1"
+1#
+1$
+1%
+1'
+b0 5
+0.
+1-
+1,
+1+
+1*
+1)
+1(
+#210
+0"
+0#
+0$
+0%
+0'
+b0 !
+b0 6
+1.
+#220
+0.
+#230
+1.
+#240
+0.
+#250
+1.
+#260
+0.
+#270
+1.
+#280
+0.
+#290
+1.
+#300
+0.
+#310
+1.
+#320
+0.
+#330
+1.
+#340
+0.
